@@ -157,13 +157,16 @@ def cosine_similarity(embedding: torch.nn.Embedding, valid_size: int = 16, valid
     Note:
         sim = (a . b) / |a||b| where `a` and `b` are embedding vectors.
     """
-
-    # TODO
+    #TODO
     valid_examples: torch.Tensor = torch.tensor(torch.randint(0, valid_window, (valid_size,)), device=device)
-    similarities: torch.Tensor = torch.zeros(valid_size, len(embedding.weight))
+    similarities: torch.Tensor = torch.zeros(valid_size, len(embedding.weight), device=device)
     valid_vectors: torch.Tensor = embedding(valid_examples)
+    
     for i in range(len(embedding.weight)):
         vector = embedding.weight[i].unsqueeze(0)
-        similarities[:, i] = torch.nn.functional.cosine_similarity(vector, valid_vectors, dim=1)
+        dot_product = torch.mm(valid_vectors, vector.t()).squeeze()
+        valid_norms = valid_vectors.norm(dim=1)
+        vector_norm = vector.norm()
+        similarities[:, i] = dot_product / (valid_norms * vector_norm)
 
     return valid_examples, similarities
